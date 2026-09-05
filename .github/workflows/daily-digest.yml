@@ -39,14 +39,17 @@ jobs:
       - name: Run digest
         run: python -m src.main
         env:
+          # Optional: add to get concert/event data beyond MLB games
           TICKETMASTER_API_KEY: ${{ secrets.TICKETMASTER_API_KEY }}
+          # Optional: speeds up Ticketmaster lookups; falls back to keyword search
           TARGET_FIELD_VENUE_ID: ${{ vars.TARGET_FIELD_VENUE_ID }}
+          # Optional: email notification (all four must be set, or email is skipped)
           SMTP_HOST: ${{ secrets.SMTP_HOST }}
-          SMTP_PORT: ${{ vars.SMTP_PORT }}
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          NOTIFY_EMAIL: ${{ vars.NOTIFY_EMAIL }}
+          # Optional: ntfy push notification (skipped when blank)
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
-          NTFY_BASE_URL: ${{ vars.NTFY_BASE_URL }}
 
       - name: Publish digest to GitHub Pages
         run: |
