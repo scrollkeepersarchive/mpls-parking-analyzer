@@ -1,0 +1,57 @@
+name: Daily Parking Digest
+
+on:
+  schedule:
+    # 7:30 AM CDT (UTC-5) = 12:30 UTC — adjust to 13:30 UTC in winter (CST = UTC-6)
+    - cron: '30 12 * * *'
+  workflow_dispatch:  # allow manual runs from the Actions tab
+
+permissions:
+  contents: write   # required to commit the updated HTML page
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+
+    env:
+      TZ: America/Chicago
+      LOOKAHEAD_DAYS: 2
+      ARRIVAL_WINDOW_START: "10:30"
+      ARRIVAL_WINDOW_END: "11:30"
+      # Set to 0 to disable email; ntfy still runs if NTFY_TOPIC is set
+      ENABLE_EMAIL: ${{ vars.ENABLE_EMAIL || '0' }}
+      # Non-sensitive recipient address stored as a repository variable
+      NOTIFY_EMAIL: ${{ vars.NOTIFY_EMAIL }}
+      # Write docs/index.html for GitHub Pages
+      PUBLISH_HTML: "1"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run digest
+        run: python -m src.main
+        env:
+          TICKETMASTER_API_KEY: ${{ secrets.TICKETMASTER_API_KEY }}
+          TARGET_FIELD_VENUE_ID: ${{ vars.TARGET_FIELD_VENUE_ID }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ vars.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          NTFY_BASE_URL: ${{ vars.NTFY_BASE_URL }}
+
+      - name: Publish digest to GitHub Pages
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/index.html
+          git diff --cached --quiet || git commit -m "chore: parking digest $(date -u +'%Y-%m-%d')"
+          git push
