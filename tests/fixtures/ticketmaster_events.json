@@ -1,0 +1,42 @@
+{
+  "_embedded": {
+    "events": [
+      {
+        "name": "Taylor Swift: Eras Tour",
+        "dates": {
+          "start": {
+            "localDate": "2026-09-06",
+            "localTime": "19:30:00"
+          }
+        },
+        "_embedded": {
+          "venues": [{"name": "Target Field"}]
+        }
+      },
+      {
+        "name": "Post Malone World Tour",
+        "dates": {
+          "start": {
+            "localDate": "2026-09-07",
+            "localTime": "20:00:00"
+          }
+        },
+        "_embedded": {
+          "venues": [{"name": "Target Field"}]
+        }
+      },
+      {
+        "name": "All-Day Festival",
+        "dates": {
+          "start": {
+            "localDate": "2026-09-08"
+          }
+        },
+        "_embedded": {
+          "venues": [{"name": "Target Field"}]
+        }
+      }
+    ]
+  },
+  "page": {"size": 50, "totalElements": 3, "totalPages": 1, "number": 0}
+}

@@ -1,111 +1,104 @@
 from __future__ import annotations
 
-from datetime import datetime
-from zoneinfo import ZoneInfo
-
 import pytest
 
-from src.models import Event
 from src.scoring.impact import overall_impact, score_events
-
-TZ = ZoneInfo("America/Chicago")
-
-
-def _event(name: str, hour: int, minute: int = 0, is_home_game: bool = False, day: int = 3) -> Event:
-    dt = datetime(2026, 9, day, hour, minute, tzinfo=TZ)
-    source = "mlb" if is_home_game else "ticketmaster"
-    return Event(name=name, start_dt=dt, venue="Target Field", source=source, is_home_game=is_home_game)
+from tests.factories import BASE_DATE, make_event, SCENARIOS
 
 
-class TestSingleEventScoring:
-    def test_home_game_at_noon_is_high(self):
-        scored = score_events([_event("Twins vs White Sox", 12, 10, is_home_game=True)])
-        assert scored[0].impact == "HIGH"
+# ── Single-event scoring ───────────────────────────────────────────────────────
+# Columns: hour, minute, is_home_game, source, expected_impact
 
-    def test_home_game_at_11am_is_high(self):
-        scored = score_events([_event("Twins vs Sox", 11, 0, is_home_game=True)])
-        assert scored[0].impact == "HIGH"
-
-    def test_home_game_at_2pm_boundary_is_high(self):
-        scored = score_events([_event("Twins vs Sox", 14, 0, is_home_game=True)])
-        assert scored[0].impact == "HIGH"
-
-    def test_home_game_at_7pm_is_medium(self):
-        scored = score_events([_event("Twins vs Sox", 19, 0, is_home_game=True)])
-        assert scored[0].impact == "MEDIUM"
-
-    def test_home_game_at_10am_is_medium(self):
-        scored = score_events([_event("Twins vs Sox", 10, 0, is_home_game=True)])
-        assert scored[0].impact == "MEDIUM"
-
-    def test_concert_at_6pm_is_high(self):
-        scored = score_events([_event("Concert", 18, 0)])
-        assert scored[0].impact == "HIGH"
-
-    def test_concert_at_4pm_boundary_is_high(self):
-        scored = score_events([_event("Concert", 16, 0)])
-        assert scored[0].impact == "HIGH"
-
-    def test_concert_at_8pm_boundary_is_high(self):
-        scored = score_events([_event("Concert", 20, 0)])
-        assert scored[0].impact == "HIGH"
-
-    def test_event_at_noon_is_medium(self):
-        scored = score_events([_event("Small Event", 12, 0)])
-        assert scored[0].impact == "MEDIUM"
-
-    def test_event_at_9pm_is_medium(self):
-        scored = score_events([_event("Late Show", 21, 0)])
-        assert scored[0].impact == "MEDIUM"
+@pytest.mark.parametrize("hour,minute,is_home_game,source,expected", [
+    # Home games — HIGH window: 11:00–14:00
+    (11,  0, True,  "mlb",          "HIGH"),   # boundary: window open
+    (12, 10, True,  "mlb",          "HIGH"),   # noon first pitch
+    (13, 35, True,  "mlb",          "HIGH"),   # mid-window
+    (14,  0, True,  "mlb",          "HIGH"),   # boundary: window close
+    (10, 59, True,  "mlb",          "MEDIUM"), # one minute before window
+    (14,  1, True,  "mlb",          "MEDIUM"), # one minute after window
+    ( 7,  5, True,  "mlb",          "MEDIUM"), # early morning game
+    (19, 10, True,  "mlb",          "MEDIUM"), # evening game
+    # Non-MLB events — HIGH window: 16:00–20:00 (setup + early arrivals)
+    (16,  0, False, "ticketmaster", "HIGH"),   # boundary: window open
+    (18, 30, False, "ticketmaster", "HIGH"),   # mid-window
+    (19, 30, False, "ticketmaster", "HIGH"),   # typical concert time
+    (20,  0, False, "ticketmaster", "HIGH"),   # boundary: window close
+    (15, 59, False, "ticketmaster", "MEDIUM"), # one minute before window
+    (20,  1, False, "ticketmaster", "MEDIUM"), # one minute after window
+    (12,  0, False, "ticketmaster", "MEDIUM"), # midday event
+    (21,  0, False, "ical",         "MEDIUM"), # late-night, iCal source
+])
+def test_single_event_scoring(hour, minute, is_home_game, source, expected):
+    event = make_event("Test Event", hour, minute, is_home_game=is_home_game, source=source)
+    scored = score_events([event])
+    assert len(scored) == 1
+    assert scored[0].impact == expected, (
+        f"Expected {expected} for {'home game' if is_home_game else 'event'} at {hour:02d}:{minute:02d}"
+    )
 
 
-class TestMultipleEventScoring:
-    def test_two_medium_events_same_day_both_upgraded_to_high(self):
-        events = [
-            _event("Twins vs Sox", 19, 0, is_home_game=True),   # MEDIUM alone
-            _event("Concert", 12, 0),                            # MEDIUM alone
-        ]
-        scored = score_events(events)
-        assert all(se.impact == "HIGH" for se in scored)
+# ── Multi-event same-day upgrade ───────────────────────────────────────────────
 
-    def test_high_and_medium_same_day_medium_upgraded(self):
-        events = [
-            _event("Twins vs Sox", 12, 0, is_home_game=True),  # HIGH
-            _event("Concert", 21, 0),                           # MEDIUM alone
-        ]
-        scored = score_events(events)
-        assert all(se.impact == "HIGH" for se in scored)
-
-    def test_events_on_different_days_not_cross_upgraded(self):
-        events = [
-            _event("Twins vs Sox", 19, 0, is_home_game=True, day=3),  # MEDIUM
-            _event("Concert", 12, 0, day=4),                           # MEDIUM
-        ]
-        scored = score_events(events)
-        # Each day has only one event, so neither gets upgraded
-        assert all(se.impact == "MEDIUM" for se in scored)
-
-    def test_empty_events_returns_empty_list(self):
-        assert score_events([]) == []
+@pytest.mark.parametrize("hour_a,home_a,hour_b,home_b", [
+    (19, True,  12, False),  # evening game + midday event → both HIGH
+    (21, False, 10, False),  # two MEDIUM non-MLB events same day → both HIGH
+    (19, True,  21, True),   # two evening games (doubleheader) → both HIGH
+])
+def test_two_events_same_day_both_upgraded(hour_a, home_a, hour_b, home_b):
+    events = [
+        make_event("Event A", hour_a, is_home_game=home_a, day_offset=0),
+        make_event("Event B", hour_b, is_home_game=home_b, day_offset=0),
+    ]
+    scored = score_events(events)
+    assert all(se.impact == "HIGH" for se in scored), (
+        f"Expected all HIGH, got {[se.impact for se in scored]}"
+    )
 
 
-class TestOverallImpact:
-    def test_no_events_returns_low(self):
-        assert overall_impact([]) == "LOW"
+def test_high_plus_medium_same_day_medium_upgraded():
+    """A HIGH event on the same day should pull any MEDIUM up to HIGH."""
+    events = [
+        make_event("Noon game", 12, is_home_game=True),   # HIGH on its own
+        make_event("Late show", 21, is_home_game=False),  # MEDIUM on its own
+    ]
+    scored = score_events(events)
+    assert all(se.impact == "HIGH" for se in scored)
 
-    def test_high_event_returns_high(self):
-        scored = score_events([_event("Twins vs Sox", 12, 10, is_home_game=True)])
-        assert overall_impact(scored) == "HIGH"
 
-    def test_medium_event_returns_medium(self):
-        scored = score_events([_event("Twins vs Sox", 19, 0, is_home_game=True)])
-        assert overall_impact(scored) == "MEDIUM"
+def test_events_on_different_days_scored_independently():
+    """MEDIUM events on separate days must not influence each other."""
+    events = [
+        make_event("Evening game", 19, is_home_game=True,  day_offset=0),
+        make_event("Late concert", 21, is_home_game=False, day_offset=1),
+    ]
+    scored = score_events(events)
+    assert all(se.impact == "MEDIUM" for se in scored)
 
-    def test_mixed_impacts_returns_highest(self):
-        from src.models import ScoredEvent
-        events = [
-            _event("A", 12, 0, is_home_game=True),
-            _event("B", 19, 0, is_home_game=True),
-        ]
-        scored = score_events(events)
-        assert overall_impact(scored) == "HIGH"
+
+def test_empty_input_returns_empty_list():
+    assert score_events([]) == []
+
+
+# ── overall_impact across named scenarios ─────────────────────────────────────
+
+@pytest.mark.parametrize("scenario_name,expected_overall", [
+    ("low",                 "LOW"),
+    ("medium-evening-game", "MEDIUM"),
+    ("medium-late-concert", "MEDIUM"),
+    ("high-noon-game",      "HIGH"),
+    ("high-morning-game",   "HIGH"),
+    ("high-concert",        "HIGH"),
+    ("high-double-event",   "HIGH"),
+    ("mixed",               "HIGH"),
+    ("maximal",             "HIGH"),
+    ("all-medium-upgraded", "HIGH"),
+])
+def test_overall_impact_by_scenario(scenario_name, expected_overall):
+    _, events = SCENARIOS[scenario_name]
+    scored = score_events(events)
+    assert overall_impact(scored) == expected_overall
+
+
+def test_overall_impact_no_events_is_low():
+    assert overall_impact([]) == "LOW"

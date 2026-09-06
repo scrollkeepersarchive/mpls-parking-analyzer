@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minneapolis Parking Alert</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #f8fafc;
+    color: #1e293b;
+    line-height: 1.5;
+    padding: 1.5rem 1rem;
+  }
+  header, main, footer { max-width: 600px; margin: 0 auto; }
+  header { margin-bottom: 1.5rem; }
+  h1 { font-size: 1.35rem; font-weight: 700; }
+  .subtitle { color: #64748b; font-size: 0.875rem; margin-top: 0.2rem; }
+  .overall-badge {
+    display: inline-block;
+    margin-top: 0.75rem;
+    padding: 0.3rem 0.85rem;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.8rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .badge-HIGH   { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
+  .badge-MEDIUM { background: #fffbeb; color: #d97706; border: 1px solid #fcd34d; }
+  .badge-LOW    { background: #f0fdf4; color: #16a34a; border: 1px solid #86efac; }
+  .card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 0.875rem;
+  }
+  .card-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #94a3b8;
+    margin-bottom: 0.6rem;
+  }
+  .event-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.4rem 0;
+    border-top: 1px solid #f1f5f9;
+  }
+  .event-row:first-of-type { border-top: none; }
+  .impact-tag {
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .tag-HIGH   { background: #fef2f2; color: #dc2626; }
+  .tag-MEDIUM { background: #fffbeb; color: #d97706; }
+  .tag-LOW    { background: #f0fdf4; color: #16a34a; }
+  .event-name { font-size: 0.9rem; flex: 1; }
+  .event-time { font-size: 0.85rem; color: #64748b; white-space: nowrap; }
+  .no-events  { text-align: center; color: #94a3b8; font-size: 0.9rem; }
+  .rec-text   { font-size: 0.9rem; color: #334155; }
+  footer {
+    margin-top: 1rem;
+    font-size: 0.78rem;
+    color: #94a3b8;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Minneapolis Parking Alert</h1>
+  <p class="subtitle">Target Field / Ramp C &mdash; Arrival 10:30&ndash;11:30 CT</p>
+  <span class="overall-badge badge-HIGH">HIGH IMPACT</span>
+</header>
+<main>
+<div class="card"><div class="card-label">TODAY &mdash; Sun Sep 6</div><div class="event-row"><span class="impact-tag tag-HIGH">HIGH</span><span class="event-name">Twins vs White Sox</span><span class="event-time">12:10 PM</span></div><div class="event-row"><span class="impact-tag tag-HIGH">HIGH</span><span class="event-name">Taylor Swift: Eras Tour</span><span class="event-time">7:30 PM</span></div></div><div class="card"><div class="card-label">TOMORROW &mdash; Mon Sep 7</div><div class="event-row"><span class="impact-tag tag-HIGH">HIGH</span><span class="event-name">Twins vs Boston Red Sox</span><span class="event-time">1:10 PM</span></div></div><div class="card"><div class="card-label">IN 2 DAYS &mdash; Tue Sep 8</div><div class="event-row"><span class="impact-tag tag-MEDIUM">MEDIUM</span><span class="event-name">Monster Jam</span><span class="event-time">2:00 PM</span></div></div>
+<div class="card"><div class="card-label">Recommendation</div><p class="rec-text">Expect elevated rates and limited availability near Ramp C. Consider arriving before 10:30, using an alternate ramp (A, B, or Twins Garage), a North Loop surface lot, or switching to transit/rideshare.</p></div>
+</main>
+<footer>
+  Last updated: 2026-09-06 11:55 AM CT &bull; 2-day lookahead
+</footer>
+</body>
+</html>
