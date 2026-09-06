@@ -1,0 +1,60 @@
+{
+  "totalItems": 3,
+  "dates": [
+    {
+      "date": "2026-09-06",
+      "games": [
+        {
+          "gamePk": 745300,
+          "gameDate": "2026-09-06T17:10:00Z",
+          "status": {"detailedState": "Scheduled"},
+          "teams": {
+            "away": {"team": {"id": 117, "name": "Houston Astros"}},
+            "home": {"team": {"id": 142, "name": "Minnesota Twins"}}
+          },
+          "venue": {"id": 3312, "name": "Target Field"}
+        },
+        {
+          "gamePk": 745301,
+          "gameDate": "2026-09-06T20:10:00Z",
+          "status": {"detailedState": "Scheduled"},
+          "teams": {
+            "away": {"team": {"id": 142, "name": "Minnesota Twins"}},
+            "home": {"team": {"id": 117, "name": "Houston Astros"}}
+          },
+          "venue": {"id": 2392, "name": "Minute Maid Park"}
+        }
+      ]
+    },
+    {
+      "date": "2026-09-07",
+      "games": [
+        {
+          "gamePk": 745302,
+          "gameDate": "2026-09-08T00:10:00Z",
+          "status": {"detailedState": "Scheduled"},
+          "teams": {
+            "away": {"team": {"id": 117, "name": "Houston Astros"}},
+            "home": {"team": {"id": 142, "name": "Minnesota Twins"}}
+          },
+          "venue": {"id": 3312, "name": "Target Field"}
+        }
+      ]
+    },
+    {
+      "date": "2026-09-08",
+      "games": [
+        {
+          "gamePk": 745303,
+          "gameDate": "2026-09-08T18:10:00Z",
+          "status": {"detailedState": "Final"},
+          "teams": {
+            "away": {"team": {"id": 117, "name": "Houston Astros"}},
+            "home": {"team": {"id": 142, "name": "Minnesota Twins"}}
+          },
+          "venue": {"id": 3312, "name": "Target Field"}
+        }
+      ]
+    }
+  ]
+}
